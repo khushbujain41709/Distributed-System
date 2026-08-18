@@ -1,0 +1,20 @@
+Practical 2: Distributed Chat Server using TCP Sockets
+
+Aim:
+Implement a Distributed Chat Server using TCP Sockets in Java where multiple clients can chat with each other.
+
+Theory:
+A Distributed Chat Server allows multiple users to connect and exchange messages in real-time. The server receives messages from one client and broadcasts them to all connected clients. Each client runs on a separate thread for concurrent communication.
+
+Key Concepts:
+ServerSocket: Listens for client connections
+Socket: Communication endpoint for each client
+Multithreading: Handles multiple clients simultaneously
+Broadcasting: Sends messages to all connected clients
+
+Explanation:
+Server listens for client connections on port 8088
+Each client gets a separate thread (ClientThread)
+When client sends message, server broadcasts to everyone
+Client runs a receiver thread to get messages continuously
+Type 'exit' to disconnect gracefully

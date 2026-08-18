@@ -1,0 +1,18 @@
+Concurrent Echo Client-Server Application
+
+Aim:
+Implement a concurrent echo client-server application in Java that can handle multiple clients simultaneously using multithreading.
+
+Theory:
+TCP (Transmission Control Protocol) is a connection-oriented protocol that provides reliable, ordered, and error-checked delivery of data between applications. Before transmitting data, TCP establishes a connection between source and destination, breaks data into packets, and ensures data integrity throughout transmission.
+
+Concurrent Server: A server that can handle multiple clients simultaneously using separate threads for each client connection. This is more efficient than sequential servers which process one client at a time.
+
+Explanation:
+ServerSocket creates server on port 8088
+accept() waits for client connections
+Each client gets a new Thread via ClientHandler
+BufferedReader reads client messages
+PrintWriter sends responses back (echo)
+Client sends message, server echoes it back
+Type 'exit' to disconnect

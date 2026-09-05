@@ -1,0 +1,13 @@
+Practical 3: Concurrent Day-Time Client-Server Application
+
+Aim:
+Implement a concurrent day-time client-server application in Java using TCP sockets that handles multiple clients and sends date/time to each.
+
+Theory:
+A Day-Time Server provides the current date and time to connected clients. The server runs continuously, accepting connections from multiple clients and sending the server's system date/time to each client.
+
+Key Concepts:
+TCP: Connection-oriented protocol ensuring reliable data delivery
+ServerSocket: Listens for incoming client connections
+Concurrency: Handles multiple clients using threads or a continuous loop
+Streams: Send and receive data between client and server

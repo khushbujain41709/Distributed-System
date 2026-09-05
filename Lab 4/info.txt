@@ -1,0 +1,26 @@
+Practical 4: Socket Options Configuration
+
+Aim:
+Configure and test socket options: SO_KEEPALIVE, SO_LINGER, SO_SNDBUF, SO_RCVBUF, TCP_NODELAY on a server socket.
+
+Theory:
+Socket Options:
+Option	---    Description
+SO_KEEPALIVE   --- Enables TCP keep-alive packets to detect dead connections
+SO_LINGER  ---	Controls behavior of close() when data is pending
+SO_SNDBUF  ---  Sets the size of the send buffer
+SO_RCVBUF  ---  Sets the size of the receive buffer
+TCP_NODELAY   ---  Disables Nagle's algorithm for faster small packet delivery
+
+Notes
+SO_KEEPALIVE and TCP_NODELAY can only be set on Socket (not ServerSocket)
+SO_LINGER value -1 means disabled
+SO_SNDBUF and SO_RCVBUF should be set before connecting for best results
+Buffer sizes should be multiples of network MTU for optimal performance
+
+Socket Option    Method to Set                  Method to Get                  Default
+SO_KEEPALIVE     setKeepAlive(true)             getKeepAlive()                 false
+SO_LINGER        setSoLinger(true, seconds)     getSoLinger()                  disabled
+SO_SNDBUF        setSendBufferSize(size)        getSendBufferSize()             OS dependent
+SO_RCVBUF        setReceiveBufferSize(size)     getReceiveBufferSize()          OS dependent
+TCP_NODELAY      setTcpNoDelay(true)            getTcpNoDelay()                 false

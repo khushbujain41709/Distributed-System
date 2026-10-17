@@ -1,0 +1,169 @@
+========================================================================
+PRACTICAL 6 - SIMULATE DISTRIBUTED MUTUAL EXCLUSION (JAVA)
+========================================================================
+
+-----------------------------------------------------------------------
+1. WHAT IS MUTUAL EXCLUSION?
+-----------------------------------------------------------------------
+- A technique ensuring that only ONE process/thread accesses a
+  shared resource (critical section) at a time.
+- Prevents race conditions and data inconsistency.
+
+-----------------------------------------------------------------------
+2. WHAT IS DISTRIBUTED MUTUAL EXCLUSION (DME)?
+-----------------------------------------------------------------------
+- Mutual exclusion in a DISTRIBUTED SYSTEM (multiple nodes/processes).
+- No shared memory -> processes communicate via MESSAGES.
+- Goal: Only one process enters critical section (CS) at a time.
+
+-----------------------------------------------------------------------
+3. CENTRALIZED ALGORITHM (used in this practical)
+-----------------------------------------------------------------------
+- One process acts as COORDINATOR (server).
+- Other processes (clients) request permission before entering CS.
+
+Rules:
+  1. Process sends REQUEST to coordinator.
+  2. If CS free  -> coordinator sends GRANT.
+  3. If CS busy  -> coordinator QUEUES the request.
+  4. Process enters CS, does work, then sends RELEASE.
+  5. Coordinator grants next queued request (or marks free).
+
+-----------------------------------------------------------------------
+4. HOW IT WORKS (STEP TABLE)
+-----------------------------------------------------------------------
+Step               Description
+-----------------  -----------------------------------------------------
+1. Coordinator     Single server object managing busy/free state.
+2. Request         Process asks coordinator for permission.
+3. Busy Check      If free -> GRANT. If busy -> add to QUEUE.
+4. Critical Section Granted process enters, does work, exits.
+5. Release         Process informs coordinator -> next in queue granted.
+6. Queue (FIFO)    Ensures fairness; only one process in CS at a time.
+
+-----------------------------------------------------------------------
+5. KEY CLASSES / METHODS USED
+-----------------------------------------------------------------------
+Coordinator
+  request(int id)   -> Grant or queue request
+  release(int id)   -> Free resource / grant next queued process
+  AtomicBoolean     -> Thread-safe busy/free flag
+  Queue<Integer>    -> FIFO list of waiting processes
+  synchronized      -> Prevents coordinator race conditions
+
+Process (extends Thread)
+  run()             -> Sends request, enters CS, sleeps, releases
+  start()           -> Begins thread execution
+  join()            -> Main waits until process finishes
+
+-----------------------------------------------------------------------
+6. MESSAGE COMPLEXITY
+-----------------------------------------------------------------------
+Per critical section entry: 2 messages
+   - 1 REQUEST  (client -> coordinator)
+   - 1 GRANT    (coordinator -> client)
+Plus 1 RELEASE  (client -> coordinator)
+
+Total: 3 messages (2 + 1 release)
+(Some texts count only 2: request + grant)
+
+-----------------------------------------------------------------------
+7. ADVANTAGES
+-----------------------------------------------------------------------
++ Simple to implement and understand.
++ Only 2-3 messages per entry (very efficient).
++ Easy to enforce fairness (FIFO queue).
++ No complex voting or token passing.
+
+-----------------------------------------------------------------------
+8. DISADVANTAGES
+-----------------------------------------------------------------------
+- Single Point of Failure (coordinator crash = system stuck).
+- Bottleneck if many processes request frequently.
+- Not scalable for large distributed systems.
+- Coordinator must be trusted by all nodes.
+
+-----------------------------------------------------------------------
+9. COMPARISON WITH OTHER DME ALGORITHMS
+-----------------------------------------------------------------------
+Algorithm        Messages/Entry   Bottleneck       Fault Tolerance
+---------------  ---------------  ---------------  -----------------
+Centralized      2 (or 3)         Coordinator      Poor
+Ricart-Agrawala  2(N-1)           None             Good
+Token Ring       0 to N           Token holder     Medium
+Maekawa          ~2*sqrt(N)       Quorum           Medium
+
+-----------------------------------------------------------------------
+10. IMPORTANT TERMS
+-----------------------------------------------------------------------
+Term                 Meaning
+-------------------  --------------------------------------------------
+Critical Section     Code accessing shared resource.
+Mutual Exclusion     Only one process in CS at a time.
+Coordinator          Central server granting permissions.
+Grant                Permission to enter CS.
+Queue                FIFO waiting list for pending requests.
+AtomicBoolean        Thread-safe true/false flag.
+synchronized         Java keyword preventing concurrent access.
+FIFO                 First-In-First-Out ordering.
+
+-----------------------------------------------------------------------
+11. SIMPLIFICATIONS IN THIS PROGRAM
+-----------------------------------------------------------------------
+- No real network/sockets (all in one JVM).
+- Coordinator is a plain Java object, not a remote server.
+- sleep() simulates time inside critical section.
+- No timeout, crash, or failure recovery.
+- Focus is on CONCEPT, not real distributed deployment.
+
+-----------------------------------------------------------------------
+12. EXPECTED OUTPUT (sample)
+-----------------------------------------------------------------------
+P1 wants to ENTER critical section
+  [Coordinator] Request received from P1
+  [Coordinator] GRANTED to P1
+P1 EXITED critical section
+  [Coordinator] RELEASE from P1
+  [Coordinator] GRANTED to P2 (from queue)
+...
+=== All processes finished ===
+
+-----------------------------------------------------------------------
+13. QUICK CODE SKELETON
+-----------------------------------------------------------------------
+class Coordinator {
+    AtomicBoolean busy = new AtomicBoolean(false);
+    Queue<Integer> queue = new LinkedList<>();
+
+    synchronized void request(int id) {
+        if (busy.compareAndSet(false, true))
+            System.out.println("GRANTED to P" + id);
+        else
+            queue.add(id);
+    }
+
+    synchronized void release(int id) {
+        if (!queue.isEmpty())
+            System.out.println("GRANTED to P" + queue.poll());
+        else
+            busy.set(false);
+    }
+}
+
+class Process extends Thread {
+    int id; Coordinator c;
+    public void run() {
+        c.request(id);          // ask permission
+        // ---- critical section ----
+        c.release(id);          // done
+    }
+}
+
+-----------------------------------------------------------------------
+14. TAKEAWAYS
+-----------------------------------------------------------------------
+* DME = mutual exclusion in distributed systems via messages.
+* Centralized algorithm is simplest (2-3 messages/entry).
+* Single coordinator = easy but has single point of failure.
+* Queue ensures fairness and one-at-a-time access.
+* Foundation for more advanced DME algorithms.

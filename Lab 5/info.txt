@@ -1,0 +1,164 @@
+========================================================================
+PRACTICAL 5 - INCREMENT COUNTER IN SHARED MEMORY (JAVA)
+========================================================================
+
+-----------------------------------------------------------------------
+1. WHAT IS SHARED MEMORY?
+-----------------------------------------------------------------------
+- Memory (variables/objects) accessible by multiple threads at once.
+- Example: static variables, heap objects.
+- Problem: concurrent read/write can corrupt data (race condition).
+
+-----------------------------------------------------------------------
+2. WHAT IS A RACE CONDITION?
+-----------------------------------------------------------------------
+- Occurs when 2+ threads access shared data simultaneously
+  and at least one writes.
+- counter++ is NOT atomic. It has 3 steps:
+     (1) READ value
+     (2) ADD 1
+     (3) WRITE back
+- Threads can interleave these steps -> lost updates.
+- Example: 5 threads x 1000 increments may give < 5000.
+
+-----------------------------------------------------------------------
+3. HOW IT WORKS (STEP TABLE)
+-----------------------------------------------------------------------
+Step               Description
+-----------------  -----------------------------------------------------
+1. Shared Counter  AtomicInteger counter = new AtomicInteger(0);
+                   Creates a thread-safe counter shared by all threads.
+
+2. Thread Creation Thread[] workers = new Thread[NUM_THREADS];
+                   Array holds all worker thread objects.
+
+3. Thread Start    workers[i].start();
+                   Launches each thread -> runs run() in new execution line.
+
+4. Atomic Increment counter.incrementAndGet();
+                   Indivisible read-modify-write. No race condition.
+
+5. Join            workers[i].join();
+                   Main thread waits until each worker finishes.
+
+6. Verification    Compare counter.get() with expected (N * increments).
+                   If equal -> thread-safe. Else -> race condition.
+
+-----------------------------------------------------------------------
+4. KEY CLASSES / METHODS
+-----------------------------------------------------------------------
+AtomicInteger          -> Thread-safe int wrapper (java.util.concurrent.atomic)
+  .incrementAndGet()   -> +1 and return new value (atomic)
+  .get()               -> Read current value
+  .set(int)            -> Set value
+  .getAndIncrement()   -> Return old value, then +1
+
+Thread                 -> Represents a line of execution
+  .start()             -> Begin execution (calls run())
+  .join()              -> Wait for thread to die
+  .run()               -> Code executed by thread
+  .getName()           -> Thread name
+  .currentThread()     -> Reference to running thread
+
+Runnable (interface)   -> Functional interface with run()
+                          Used with: new Thread(runnable).start()
+
+-----------------------------------------------------------------------
+5. WHY AtomicInteger OVER int?
+-----------------------------------------------------------------------
+- int++ is NOT atomic -> race conditions.
+- AtomicInteger uses CPU-level CAS (Compare-And-Swap).
+- No locks -> faster than synchronized for single variables.
+- Guarantees correctness in multi-threaded environments.
+
+-----------------------------------------------------------------------
+6. ALTERNATIVE APPROACHES
+-----------------------------------------------------------------------
+a) synchronized block/method:
+      synchronized void increment() { counter++; }
+   - Simple but slower (locking overhead).
+
+b) Lock (ReentrantLock):
+      lock.lock();
+      try { counter++; } finally { lock.unlock(); }
+   - More control than synchronized.
+
+c) LongAdder (Java 8+):
+      LongAdder counter = new LongAdder();
+      counter.increment();
+   - Faster under high contention (uses cell splitting).
+
+d) volatile int:
+   - Ensures visibility, NOT atomicity. counter++ still unsafe.
+
+-----------------------------------------------------------------------
+7. THREAD LIFECYCLE
+-----------------------------------------------------------------------
+NEW -> RUNNABLE -> (RUNNING) -> BLOCKED/WAITING/TIMED_WAITING
+    -> TERMINATED
+
+- start()  : NEW -> RUNNABLE
+- join()   : current thread waits for target to reach TERMINATED
+- sleep(ms): TIMED_WAITING
+- wait()   : WAITING (needs notify/notifyAll)
+
+-----------------------------------------------------------------------
+8. IMPORTANT TERMS
+-----------------------------------------------------------------------
+Term              Meaning
+----------------  -----------------------------------------------------
+Atomicity         Operation completes fully or not at all.
+Visibility        One thread's write seen by others.
+Race Condition    Unpredictable result due to concurrent access.
+Critical Section  Code accessing shared resource.
+Thread Safety     Correct behavior under concurrent access.
+CAS               Compare-And-Swap (hardware atomic instruction).
+Deadlock          Threads waiting on each other forever.
+Starvation        Thread never gets CPU time.
+Livelock          Threads active but making no progress.
+
+-----------------------------------------------------------------------
+9. COMMON PITFALLS
+-----------------------------------------------------------------------
+X Using plain int++ across threads.
+X Forgetting join() -> main prints wrong/partial result.
+X Using Thread.getAllStackTraces().keySet() (includes system threads).
+X Calling run() instead of start() -> runs in same thread, not new.
+X Assuming volatile makes ++ atomic (it does NOT).
+
+-----------------------------------------------------------------------
+10. QUICK EXAMPLE SKELETON
+-----------------------------------------------------------------------
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class Demo {
+    static AtomicInteger counter = new AtomicInteger(0);
+    public static void main(String[] a) throws InterruptedException {
+        Thread[] t = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            t[i] = new Thread(() -> {
+                for (int j = 0; j < 1000; j++)
+                    counter.incrementAndGet();
+            });
+            t[i].start();
+        }
+        for (Thread th : t) th.join();
+        System.out.println(counter.get());  // 5000
+    }
+}
+
+-----------------------------------------------------------------------
+11. EXPECTED OUTPUT
+-----------------------------------------------------------------------
+Final Counter Value: 5000
+Expected Value     : 5000
+SUCCESS: No race condition occurred.
+
+-----------------------------------------------------------------------
+12. TAKEAWAYS
+-----------------------------------------------------------------------
+* Shared memory needs synchronization or atomic types.
+* AtomicInteger = simplest, fastest fix for single counters.
+* Always join() worker threads before reading final result.
+* Prefer java.util.concurrent over manual synchronization.
+* Understand race conditions -> foundation of concurrent programming.

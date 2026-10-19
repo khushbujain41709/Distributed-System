@@ -1,0 +1,207 @@
+========================================================================
+Practical 8: CORBA Based Server-Client Application
+========================================================================
+
+AIM
+------------------------------------------------------------------------
+To create a CORBA (Common Object Request Broker Architecture) based
+server-client application in Java, where the client invokes a method
+on a remote object using the CORBA naming service.
+
+========================================================================
+
+OBJECTIVE
+------------------------------------------------------------------------
+1. To understand the CORBA architecture and its components: ORB,
+   IDL, Stub, Skeleton, and Naming Service.
+2. To define a remote interface using IDL and generate the
+   corresponding Java classes with the idlj compiler.
+3. To implement a CORBA server that registers its object with the
+   naming service (orbd) and a client that retrieves the object by
+   name and invokes a remote method.
+
+========================================================================
+
+THEORY
+------------------------------------------------------------------------
+CORBA is a standard defined by the Object Management Group (OMG) that
+allows objects written in different languages and running on different
+platforms to communicate with each other over a network.
+
+Key components:
+  - IDL (Interface Definition Language) : language-neutral way to
+    define the remote interface.
+  - ORB (Object Request Broker)         : middleware that handles
+    marshalling, request routing and object location.
+  - Stub (client side)                  : proxy that forwards calls to
+    the ORB.
+  - Skeleton (server side)              : receives calls and dispatches
+    them to the servant implementation.
+  - Naming Service (orbd)               : a directory where servers bind
+    names and clients look them up.
+
+Compilation chain in Java:
+  Hello.idl  --(idlj -fall)-->  HelloApp/*.java  --(javac)-->  .class
+
+========================================================================
+
+FILES INCLUDED IN THIS PRACTICAL
+------------------------------------------------------------------------
+1. Hello.idl        - IDL file defining the remote interface Hello
+                      with a method sayHello().
+2. HelloImpl.java   - Server-side implementation class extending
+                      HelloPOA and returning a greeting string.
+3. Server.java      - ORB initialization, servant registration,
+                      binding the object under the name "Hello".
+4. Client.java      - ORB initialization, name lookup, remote method
+                      invocation.
+5. HelloApp/        - Auto-generated Java classes produced by idlj.
+6. info.txt         - This file.
+
+(Full source code of the above Java files is attached separately.)
+
+========================================================================
+
+PROCEDURE (STEPS PERFORMED)
+------------------------------------------------------------------------
+1. Write the IDL file Hello.idl defining module HelloApp and interface
+   Hello with a method: string sayHello().
+2. Generate Java support files using the idlj compiler:
+        idlj -fall Hello.idl
+3. Write HelloImpl.java implementing the remote interface.
+4. Write Server.java that:
+     - initializes the ORB,
+     - activates the RootPOA,
+     - creates the servant and obtains its reference,
+     - binds the reference under the name "Hello" in the naming
+       service.
+5. Write Client.java that:
+     - initializes the ORB,
+     - resolves the naming service,
+     - looks up the object named "Hello",
+     - invokes sayHello() and prints the result.
+6. Compile all Java sources:
+        javac *.java
+7. Start the CORBA naming service:
+        orbd -ORBInitialPort 1050
+8. Run the server in one terminal:
+        java Server -ORBInitialPort 1050
+9. Run the client in another terminal:
+        java Client -ORBInitialPort 1050
+10. Observe the output returned by the remote method.
+
+========================================================================
+
+COMMANDS USED
+------------------------------------------------------------------------
+Generate Java files : idlj -fall Hello.idl
+Compile             : javac *.java
+Naming service      : orbd -ORBInitialPort 1050
+Server              : java Server -ORBInitialPort 1050
+Client              : java Client -ORBInitialPort 1050
+
+========================================================================
+
+SAMPLE OUTPUT
+------------------------------------------------------------------------
+Server side:
+    Server ready and waiting...
+
+Client side:
+    Hello from CORBA Server!
+
+========================================================================
+
+OBSERVATIONS
+------------------------------------------------------------------------
+1. The client does not know the physical location of the server
+   object; it only knows its logical name "Hello". The ORB and the
+   naming service take care of locating it.
+2. The idlj compiler automatically generates stubs, skeletons and
+   helper classes from the IDL file, making the RPC transparent to
+   the programmer.
+3. The server must be started and bind its object before the client
+   tries to look it up, otherwise a "not found" exception is raised.
+4. CORBA is platform- and language-independent. The same IDL file
+   could be used to generate C++ or Python stubs, and the client and
+   server could then be written in different languages.
+5. The naming service (orbd) must remain running for the duration of
+   the client-server interaction.
+
+========================================================================
+
+ERRORS ENCOUNTERED AND RESOLUTION
+------------------------------------------------------------------------
+1. "idlj is not recognized" - JDK 22 (which had been installed
+   previously) no longer ships CORBA tools. CORBA support was removed
+   from JDK 11 onwards. Resolution: installed JDK 8
+   (jdk1.8.0_202) and prepended its bin directory to PATH.
+2. "Invalid filename: HelloApp/*.java" - Windows PowerShell does not
+   expand wildcards inside subdirectories. Resolution: used
+   "javac *.java", which lets javac resolve dependencies in HelloApp
+   automatically.
+3. "Start-Process: parameter 'ORBInitialPort' not found" - In
+   PowerShell, "start" is an alias for Start-Process, which does not
+   forward unknown parameters. Resolution: ran "orbd" directly instead
+   of "start orbd".
+4. "ClassNotFoundException: Server / Client" - classes had not been
+   compiled because earlier steps failed. Resolution: fixed JDK 8 path
+   and re-compiled successfully before running.
+
+========================================================================
+
+CONCLUSION
+------------------------------------------------------------------------
+A CORBA-based server-client application was successfully implemented.
+The remote object was defined in IDL, Java stubs and skeletons were
+generated with idlj, the servant was registered with the CORBA naming
+service, and the client invoked the remote method through the ORB. The
+practical demonstrates how CORBA provides language- and
+platform-independent communication between distributed objects.
+
+========================================================================
+
+
+COMMANDS EXECUTED AFTER INSTALLING JDK 8
+(Actual sequence performed in PowerShell to obtain the output)
+------------------------------------------------------------------------
+
+# Step 0: Open PowerShell and move to the Lab 8 folder
+cd "C:\Users\khushbu\OneDrive\Desktop\4th Year\Distributed System Lab\Lab 8"
+
+# Step 1: Temporarily prepend JDK 8's bin to PATH for this session
+$env:Path = "C:\Program Files\Java\jdk1.8.0_202\bin;" + $env:Path
+
+# Step 2: Verify that JDK 8 is now the active compiler
+javac -version
+# Expected output: javac 1.8.0_202
+
+# Step 3: Verify that the idlj compiler is available
+idlj -version
+# Expected output: idlj version 1.8.0_202 (or similar)
+
+# Step 4: Generate CORBA Java support files from the IDL
+idlj -fall Hello.idl
+# Creates the HelloApp/ folder containing Hello.java, HelloHelper.java,
+# HelloHolder.java, HelloOperations.java, HelloPOA.java, _HelloStub.java
+
+# Step 5: Compile all Java sources in the current directory
+javac *.java
+# Produces .class files for Server, Client, HelloImpl, and HelloApp/*
+
+# Step 6: Start the CORBA naming service (keep this window open)
+orbd -ORBInitialPort 1050
+
+# Step 7: In a NEW PowerShell window, start the server
+cd "C:\Users\khushbu\OneDrive\Desktop\4th Year\Distributed System Lab\Lab 8"
+$env:Path = "C:\Program Files\Java\jdk1.8.0_202\bin;" + $env:Path
+java Server -ORBInitialPort 1050
+# Expected output: Server ready and waiting...
+
+# Step 8: In ANOTHER new PowerShell window, run the client
+cd "C:\Users\khushbu\OneDrive\Desktop\4th Year\Distributed System Lab\Lab 8"
+$env:Path = "C:\Program Files\Java\jdk1.8.0_202\bin;" + $env:Path
+java Client -ORBInitialPort 1050
+# Expected output: Hello from CORBA Server!
+
+========================================================================

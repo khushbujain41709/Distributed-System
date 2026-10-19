@@ -1,0 +1,129 @@
+========================================================================
+Practical 7: Java RMI (Remote Method Invocation)
+========================================================================
+
+AIM
+------------------------------------------------------------------------
+To implement the Java RMI (Remote Method Invocation) mechanism for
+accessing methods of a remote system.
+
+========================================================================
+
+OBJECTIVE
+------------------------------------------------------------------------
+1. To understand how a Java program on one JVM can invoke methods on
+   an object residing in another JVM (the remote system).
+2. To study the role of the RMI Registry as a naming/binding service.
+3. To implement a simple client-server application using RMI where the
+   client calls methods (sayHello and add) that actually execute on the
+   server side.
+
+========================================================================
+
+THEORY (in brief)
+------------------------------------------------------------------------
+Java RMI is a Java API that allows an object running in one Java
+Virtual Machine (JVM) to invoke methods on an object running in another
+JVM. RMI uses:
+  - Stub (client-side proxy)  : forwards the call to the server.
+  - Skeleton (server-side)    : receives the call and invokes the
+                                actual method on the remote object.
+  - RMI Registry              : a naming service (default port 1099)
+                                where remote objects are bound under a
+                                name and looked up by clients.
+  - Marshalling / Unmarshalling : arguments and return values are
+                                serialized and sent over the network.
+
+Key requirements for a remote object:
+  - Its interface must extend java.rmi.Remote.
+  - Every method in the interface must declare java.rmi.RemoteException.
+  - The implementation class must extend UnicastRemoteObject (or be
+    explicitly exported).
+
+========================================================================
+
+FILES INCLUDED IN THIS PRACTICAL
+------------------------------------------------------------------------
+1. hello.java       - Remote interface declaring sayHello() and add().
+2. helloImpl.java   - Implementation of the remote interface.
+3. Server.java      - Creates the remote object, starts the RMI
+                      registry, and binds the object as "HelloService".
+4. Client.java      - Connects to the registry, looks up "HelloService"
+                      and invokes the remote methods.
+5. info.txt         - This file.
+
+(Full source code of the above Java files is attached separately.)
+
+========================================================================
+
+PROCEDURE (STEPS PERFORMED)
+------------------------------------------------------------------------
+1. Write the remote interface Hello.java extending java.rmi.Remote.
+2. Write the implementation class HelloImpl.java extending
+   UnicastRemoteObject.
+3. Write Server.java that creates the implementation object, starts
+   the RMI registry on port 1099, and binds the object with the name
+   "HelloService" using rebind().
+4. Write Client.java that connects to the registry, looks up
+   "HelloService" using lookup(), and calls the remote methods.
+5. Compile all Java files using:
+        javac *.java
+6. Start the RMI registry (either manually with rmiregistry OR let the
+   Server create it).
+7. Run the Server program in one terminal:
+        java Server
+8. Run the Client program in another terminal:
+        java Client
+9. Observe the output returned by the remote methods.
+
+========================================================================
+
+COMMANDS USED
+------------------------------------------------------------------------
+Compile   : javac *.java
+Server    : java Server
+Client    : java Client
+Registry  : java Server already calls LocateRegistry.createRegistry(1099),
+            so running the Server is sufficient. (Alternatively, the
+            rmiregistry tool can be started manually.)
+
+========================================================================
+
+SAMPLE OUTPUT
+------------------------------------------------------------------------
+Server side:
+    Server is ready and waiting...
+
+Client side:
+    Hello, Khushbu! Welcome to Java RMI.
+    Sum of 10 + 20 = 30
+
+========================================================================
+
+OBSERVATIONS
+------------------------------------------------------------------------
+1. The client does not create the HelloImpl object itself; it receives
+   a stub from the RMI registry. All method calls on the stub are
+   transparently forwarded to the server.
+2. The registry acts as a phonebook: the server "publishes" a name and
+   the client "looks it up".
+3. Only one registry can bind port 1099 at a time; otherwise a
+   BindException (port already in use) is raised.
+4. If the client tries to look up a name that has not been bound yet,
+   a NotBoundException is thrown. Hence the Server must be started
+   before the Client.
+5. Remote methods must declare RemoteException to handle network
+   failures.
+
+========================================================================
+
+CONCLUSION
+------------------------------------------------------------------------
+The Java RMI mechanism was successfully implemented. A remote object
+was created on the server, bound to the RMI registry under the name
+"HelloService", and its methods (sayHello and add) were invoked
+transparently from a separate client JVM. This demonstrates how RMI
+enables method invocation across JVMs over a network, forming the
+foundation of distributed Java applications.
+
+========================================================================
